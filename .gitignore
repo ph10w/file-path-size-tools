@@ -8,4 +8,4 @@ outputs/*.csv
 outputs/*.txt
 
 # Keep the program itself versioned
-!outputs/sort_file_paths_by_size.py
+!outputs/merge_unused_files.py
