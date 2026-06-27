@@ -1,0 +1,10 @@
+[run]
+branch = True
+source = merge_unused_files
+parallel = True
+patch = subprocess
+disable_warnings = module-not-imported, no-data-collected
+
+[report]
+show_missing = True
+fail_under = 85

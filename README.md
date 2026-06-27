@@ -81,8 +81,20 @@ Mit `--recursive` werden dabei auch Unterordner durchsucht und in das Ziel ueber
 
 ## Tests
 
-Die automatisierten Tests liegen im Ordner `test` und koennen ohne zusaetzliche Abhaengigkeiten ausgefuehrt werden:
+Die automatisierten Tests liegen im Ordner `test`. Fuer den enthaltenen Coverage-Test wird einmalig die Entwicklungsabhaengigkeit installiert:
+
+```powershell
+python -m pip install -r requirements-dev.txt
+```
+
+Danach fuehrt dieser Befehl alle Funktions- und Coverage-Tests aus:
 
 ```powershell
 python -m unittest discover -s test -v
+```
+
+Der Coverage-Test misst Zeilen und Verzweigungen des Hauptprogramms auch in den von den Integrationstests gestarteten Unterprozessen. Er schlaegt fehl, sobald die Gesamtabdeckung unter 85 Prozent sinkt. Nur die Abdeckungsmessung kann separat so gestartet werden:
+
+```powershell
+python test\test_coverage.py -v
 ```
