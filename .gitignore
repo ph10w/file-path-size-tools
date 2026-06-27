@@ -1,7 +1,5 @@
 __pycache__/
 *.py[cod]
-work/
-
 # Local data/log outputs
 outputs/*.CSV
 outputs/*.csv

@@ -78,3 +78,11 @@ python merge_unused_files.py outputs\Logfile.CSV --missing-in D:\GameTools\Heart
 Der gleiche Aufruf funktioniert nach dem Loeschen von `outputs\Logfile.CSV` weiter, sofern `outputs\used_original_files.txt` bereits erzeugt wurde. Eine spaeter neu angelegte `Logfile.CSV` ergaenzt beim naechsten Lauf wieder nur neue Pfade.
 
 Mit `--recursive` werden dabei auch Unterordner durchsucht und in das Ziel uebernommen.
+
+## Tests
+
+Die automatisierten Tests liegen im Ordner `test` und koennen ohne zusaetzliche Abhaengigkeiten ausgefuehrt werden:
+
+```powershell
+python -m unittest discover -s test -v
+```
