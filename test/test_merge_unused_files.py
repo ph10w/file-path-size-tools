@@ -4,6 +4,10 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+import merge_unused_files
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "merge_unused_files.py"
@@ -26,6 +30,43 @@ def read_paths(path_file: Path) -> list[Path]:
 
 
 class MergeUnusedFilesTests(unittest.TestCase):
+    def test_console_colors_can_be_enabled_and_disabled(self) -> None:
+        terminal = SimpleNamespace(isatty=lambda: True, fileno=lambda: 1)
+        redirected = SimpleNamespace(isatty=lambda: False)
+
+        self.assertFalse(merge_unused_files.supports_color(redirected))
+        with patch.dict(merge_unused_files.os.environ, {"NO_COLOR": "1"}):
+            self.assertFalse(merge_unused_files.supports_color(terminal))
+        with patch.object(merge_unused_files.os, "name", "posix"):
+            self.assertEqual(
+                merge_unused_files.colored(
+                    "gruen",
+                    merge_unused_files.ANSI_GREEN,
+                    terminal,
+                ),
+                "\033[32mgruen\033[0m",
+            )
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows-Konsolentest")
+    def test_enables_windows_virtual_terminal_processing(self) -> None:
+        import ctypes
+        import msvcrt
+
+        terminal = SimpleNamespace(isatty=lambda: True, fileno=lambda: 1)
+        kernel32 = SimpleNamespace(
+            GetConsoleMode=lambda handle, mode: 1,
+            SetConsoleMode=lambda handle, mode: 1,
+        )
+        with (
+            patch.object(msvcrt, "get_osfhandle", return_value=123),
+            patch.object(
+                ctypes,
+                "windll",
+                SimpleNamespace(kernel32=kernel32),
+            ),
+        ):
+            self.assertTrue(merge_unused_files.supports_color(terminal))
+
     def run_tool(
         self,
         csv_file: Path,
@@ -97,6 +138,33 @@ class MergeUnusedFilesTests(unittest.TestCase):
             self.assertEqual(used_paths, {first, second})
             self.assertEqual(unused_paths, [unused])
 
+    def test_removes_used_path_that_no_longer_exists_in_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "source"
+            logged_root = root / "logged-root"
+            source.mkdir()
+            existing = source / "existing.bin"
+            existing.write_bytes(b"existing")
+
+            csv_file = root / "outputs" / "Logfile.CSV"
+            stale_logged_path = logged_root / "removed.bin"
+            write_csv(csv_file, [logged_root / existing.name, stale_logged_path])
+
+            result = self.run_tool(
+                csv_file,
+                source,
+                input_root=logged_root,
+            )
+
+            self.assertEqual(
+                read_paths(csv_file.parent / "used_original_files.txt"),
+                [logged_root / existing.name],
+            )
+            self.assertIn("[2/4]", result.stderr)
+            self.assertIn(f"Entfernt: {stale_logged_path}", result.stderr)
+            self.assertIn("Entfernt: 1; verbleibend: 1", result.stderr)
+
     def test_merge_restores_file_when_it_becomes_used(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -124,6 +192,27 @@ class MergeUnusedFilesTests(unittest.TestCase):
                 read_paths(csv_file.parent / "unused_original_files.txt"),
                 [],
             )
+
+    def test_merge_keeps_used_original_that_is_zero_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "source"
+            target = root / "merged"
+            source.mkdir()
+            used_zero_byte_file = source / "used-zero-byte.bin"
+            used_zero_byte_file.write_bytes(b"")
+
+            csv_file = root / "outputs" / "Logfile.CSV"
+            write_csv(csv_file, [used_zero_byte_file])
+
+            first_run = self.run_tool(csv_file, source, merge_target=target)
+            second_run = self.run_tool(csv_file, source, merge_target=target)
+
+            self.assertTrue((target / used_zero_byte_file.name).is_file())
+            self.assertEqual((target / used_zero_byte_file.name).stat().st_size, 0)
+            self.assertIn("Originale kopiert: 1", first_run.stdout)
+            self.assertEqual(second_run.stdout.strip(), "Fertig. Keine Aenderungen.")
+            self.assertIn("Erzeugt/auf 0 Byte gesetzt: 0", second_run.stderr)
 
 
 if __name__ == "__main__":

@@ -6,16 +6,18 @@ Das Python-Werkzeug sammelt aus Procmon-/Log-CSV-Dateien dauerhaft die Pfade ver
 
 - CSV-Datei mit Spalte `Path` als Input verwenden
 - Verwendete Pfade dauerhaft in `used_original_files.txt` sammeln
+- Nicht mehr im Suchordner vorhandene Used-Eintraege entfernen
 - Nicht verwendete Pfade automatisch in `unused_original_files.txt` schreiben
 - Ergebnis standardmaessig nach Dateigroesse absteigend sortieren
 - Nicht verwendete Dateien als 0-Byte-Dateien mit verwendeten Originaldateien zusammenfuehren
 - Fortschritt und Anzahl der bearbeiteten Dateien je Arbeitsschritt anzeigen
+- Aenderungen farbig markieren und am Ende kompakt zusammenfassen
 
 ## Zentrale Pfadliste
 
 Beim ersten Lauf werden im Ordner der Input-CSV automatisch `used_original_files.txt` und `unused_original_files.txt` erzeugt. Bei `outputs\Logfile.CSV` liegen die Dateien somit ebenfalls unter `outputs`.
 
-Jede neue CSV ergaenzt nur Pfade, die noch nicht in `used_original_files.txt` gespeichert sind. Vorhandene Pfade bleiben erhalten, auch wenn sie in einer spaeteren CSV nicht mehr vorkommen. Nach einem erfolgreichen Lauf kann `Logfile.CSV` geloescht werden. Derselbe Programmaufruf verwendet dann weiterhin `used_original_files.txt`, solange keine neue CSV vorhanden ist.
+Jede neue CSV ergaenzt nur Pfade, die noch nicht in `used_original_files.txt` gespeichert sind. Vorhandene Pfade bleiben erhalten, auch wenn sie in einer spaeteren CSV nicht mehr vorkommen. Eintraege, deren entsprechende Datei unter `--missing-in` nicht mehr existiert, werden jedoch automatisch aus der zentralen Liste entfernt und in der Konsole ausgegeben. Nach einem erfolgreichen Lauf kann `Logfile.CSV` geloescht werden. Derselbe Programmaufruf verwendet dann weiterhin `used_original_files.txt`, solange keine neue CSV vorhanden ist.
 
 ## Parameter
 
